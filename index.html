@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puzzle 15 mảnh ghép – Tế bào thực vật</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#e8f7e8,#dff3ff);color:#17351f}.wrap{max-width:1100px;margin:auto;padding:24px}.hero{background:white;border-radius:22px;padding:22px;box-shadow:0 10px 30px #0001;margin-bottom:18px}.hero h1{margin:0 0 8px;color:#18753a;font-size:clamp(24px,4vw,38px)}.hero p{margin:6px 0}.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:12px;padding:11px 16px;background:#18753a;color:#fff;font-weight:700;cursor:pointer}.btn.secondary{background:#3976a8}.stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-weight:700}.game{display:grid;grid-template-columns:minmax(300px,1fr) 290px;gap:18px}.board{background:#fff;padding:14px;border-radius:20px;box-shadow:0 10px 30px #0001}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;aspect-ratio:5/3;background:#164c2b;padding:4px;border-radius:12px}.tile{position:relative;overflow:hidden;background:#d8ead6;border:2px solid #fff;border-radius:4px;cursor:grab;touch-action:none}.tile canvas{width:100%;height:100%;display:block}.tile.selected{outline:4px solid #ffb000;z-index:2}.tile.correct{border-color:#2ca34a}.num{position:absolute;top:4px;left:4px;background:#000b;color:#fff;border-radius:7px;padding:2px 6px;font-size:12px;font-weight:700}.side{background:#fff;border-radius:20px;padding:18px;box-shadow:0 10px 30px #0001}.side h2{margin-top:0;color:#18753a}.side ol{padding-left:23px;line-height:1.6}.hint{background:#eef8ef;border-left:5px solid #2ca34a;padding:10px;border-radius:8px;margin-top:12px}.win{display:none;background:#fff4c7;border:2px solid #f0bf38;padding:12px;border-radius:12px;margin-top:12px;font-weight:700}.win.show{display:block}.legend{margin-top:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:7px;font-size:14px}.legend span{background:#f5faf5;padding:7px;border-radius:8px}.footer{text-align:center;margin-top:16px;color:#456}
+@media(max-width:800px){.game{grid-template-columns:1fr}.side{order:-1}.legend{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<section class="hero">
+<h1>🧩 Puzzle 15 mảnh: TẾ BÀO THỰC VẬT</h1>
+<p>Ghép đúng 15 mảnh để hoàn thành hình tế bào thực vật. <b>Nhấp 2 mảnh để đổi chỗ</b> hoặc kéo–thả để hoán đổi.</p>
+<div class="controls"><button class="btn" onclick="shuffle()">🔀 Xáo trộn</button><button class="btn secondary" onclick="showAnswer()">👀 Xem đáp án</button><button class="btn" onclick="resetGame()">↻ Chơi lại</button></div>
+<div class="stats"><span>🎯 Mảnh đúng: <b id="score">0/15</b></span><span>🔄 Lượt đổi: <b id="moves">0</b></span></div>
+<div id="win" class="win">🎉 Xuất sắc! Em đã ghép hoàn chỉnh tế bào thực vật. Hãy gọi tên các bào quan trên hình.</div>
+</section>
+<div class="game">
+<div class="board"><div id="grid" class="grid"></div></div>
+<aside class="side">
+<h2>🎓 Nhiệm vụ</h2>
+<ol><li>Quan sát các mảnh ghép.</li><li>Tìm vị trí đúng của từng mảnh.</li><li>Ghép đủ <b>15 mảnh</b>.</li><li>Sau khi hoàn thành, xác định các thành phần chính.</li></ol>
+<div class="hint"><b>Gợi ý:</b> Thành tế bào nằm ngoài cùng; không bào lớn ở trung tâm; lục lạp có màu xanh; nhân thường được biểu diễn bằng vùng tròn lớn.</div>
+<h3>🔬 Từ khóa</h3>
+<div class="legend"><span>🟩 Thành tế bào</span><span>🟢 Lục lạp</span><span>🟣 Nhân</span><span>🔵 Không bào</span><span>🟠 Ty thể</span><span>🟡 Ribosome</span></div>
+</aside>
+</div>
+<p class="footer">Trò chơi dùng cho hoạt động khởi động/ôn tập KHTN – Sinh học. Giáo viên có thể chiếu lên màn hình và cho học sinh thi theo nhóm.</p>
+</div>
+
+<canvas id="source" width="1000" height="600" style="display:none"></canvas>
+<script>
+const COLS=5,ROWS=3,N=15;let order=[],selected=null,moves=0;const grid=document.getElementById('grid'),source=document.getElementById('source'),ctx=source.getContext('2d');
+function drawCell(){const c=ctx;c.clearRect(0,0,1000,600);c.fillStyle='#dff5df';c.fillRect(0,0,1000,600);
+// cell wall + membrane
+c.fillStyle='#4f9b55';c.strokeStyle='#225d2b';c.lineWidth=10;c.beginPath();c.roundRect(35,35,930,530,75);c.fill();c.stroke();
+c.fillStyle='#b8e6ad';c.strokeStyle='#3d8a47';c.lineWidth=6;c.beginPath();c.roundRect(55,55,890,490,60);c.fill();c.stroke();
+// cytoplasm
+c.fillStyle='#e8f7c8';c.beginPath();c.roundRect(75,75,850,450,45);c.fill();
+// central vacuole
+c.fillStyle='#9ddbf0';c.strokeStyle='#4c9fba';c.lineWidth=7;c.beginPath();c.ellipse(520,300,265,175,0,0,Math.PI*2);c.fill();c.stroke();
+c.fillStyle='#236d87';c.font='bold 25px Arial';c.textAlign='center';c.fillText('KHÔNG BÀO',520,305);
+// nucleus
+c.fillStyle='#b990d4';c.strokeStyle='#6b3f87';c.lineWidth=7;c.beginPath();c.ellipse(250,285,105,90,0,0,Math.PI*2);c.fill();c.stroke();c.fillStyle='#fff';c.font='bold 22px Arial';c.fillText('NHÂN',250,292);
+// nucleolus
+c.fillStyle='#70468d';c.beginPath();c.arc(250,285,25,0,Math.PI*2);c.fill();
+// chloroplasts
+const chl=[[760,145],[840,225],[745,425],[170,430],[365,130],[390,465]];chl.forEach(([x,y],i)=>{c.save();c.translate(x,y);c.rotate(i%2?.3:-.2);c.fillStyle='#3f9f57';c.strokeStyle='#226936';c.lineWidth=5;c.beginPath();c.ellipse(0,0,48,24,0,0,Math.PI*2);c.fill();c.stroke();c.strokeStyle='#b9e58d';c.lineWidth=3;for(let k=-20;k<=20;k+=10){c.beginPath();c.moveTo(k,-13);c.lineTo(k,13);c.stroke()}c.restore()});
+// mitochondria
+const mit=[[115,190],[650,120],[850,400],[300,500]];mit.forEach(([x,y])=>{c.fillStyle='#e89a4c';c.strokeStyle='#9a5720';c.lineWidth=4;c.beginPath();c.ellipse(x,y,35,18,.2,0,Math.PI*2);c.fill();c.stroke();c.strokeStyle='#fff0cf';c.lineWidth=3;c.beginPath();c.moveTo(x-20,y);c.bezierCurveTo(x-8,y-12,x,y+12,x+10,y);c.bezierCurveTo(x+20,y-12,x+25,y+8,x+28,y-2);c.stroke()});
+// ribosomes
+c.fillStyle='#d6a928';for(let i=0;i<28;i++){const x=95+(i*83)%810,y=90+(i*137)%420;c.beginPath();c.arc(x,y,5,0,Math.PI*2);c.fill()}
+// labels around cell
+c.fillStyle='#17351f';c.font='bold 18px Arial';c.textAlign='left';c.fillText('THÀNH TẾ BÀO',75,28);c.fillText('MÀNG SINH CHẤT',760,585);
+}
+function makeTiles(){grid.innerHTML='';order.forEach((srcIndex,pos)=>{const d=document.createElement('div');d.className='tile';d.draggable=true;d.dataset.pos=pos;d.dataset.src=srcIndex;const cv=document.createElement('canvas');cv.width=200;cv.height=200;const cc=cv.getContext('2d');const sx=(srcIndex%COLS)*200,sy=Math.floor(srcIndex/COLS)*200;cc.drawImage(source,sx,sy,200,200,0,0,200,200);d.appendChild(cv);const n=document.createElement('div');n.className='num';n.textContent=srcIndex+1;d.appendChild(n);d.onclick=()=>pick(pos);d.ondragstart=e=>e.dataTransfer.setData('text/plain',pos);d.ondragover=e=>e.preventDefault();d.ondrop=e=>{e.preventDefault();swap(pos,Number(e.dataTransfer.getData('text/plain')))};grid.appendChild(d);});update();}
+function pick(pos){if(selected===null){selected=pos;grid.children[pos].classList.add('selected')}else{swap(selected,pos);selected=null;[...grid.children].forEach(x=>x.classList.remove('selected'))}}
+function swap(a,b){if(a===b)return;[order[a],order[b]]=[order[b],order[a]];moves++;makeTiles()}
+function shuffle(){do{order=Array.from({length:N},(_,i)=>i).sort(()=>Math.random()-.5)}while(order.every((x,i)=>x===i));moves=0;selected=null;makeTiles()}
+function resetGame(){order=Array.from({length:N},(_,i)=>i);moves=0;selected=null;makeTiles()}
+function update(){let correct=order.filter((x,i)=>x===i).length;document.getElementById('score').textContent=correct+'/15';document.getElementById('moves').textContent=moves;[...grid.children].forEach((el,i)=>el.classList.toggle('correct',order[i]===i));document.getElementById('win').classList.toggle('show',correct===N)}
+function showAnswer(){order=Array.from({length:N},(_,i)=>i);makeTiles();document.getElementById('win').classList.add('show')}
+drawCell();shuffle();
+</script>
+</body>
+</html>
